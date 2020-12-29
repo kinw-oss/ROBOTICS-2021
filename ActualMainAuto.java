@@ -34,57 +34,61 @@ public class ActualMainAuto extends LinearOpMode {
     private Servo lifter;
     private Servo shifter;
 
-
+    //Inits Vuforia
+    
     private void initVuforia() {
 
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
-
         parameters.vuforiaLicenseKey = VUFORIA_KEY;
-        parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;
-
+        parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;                               //Inits Vuforia
         //  Instantiate the Vuforia engine
         vuforia = ClassFactory.getInstance().createVuforia(parameters);
-
         // Loading trackables is not necessary for the TensorFlow Object Detection engine.
-    }     //Inits Vuforis
-
+    }  
+    
+    //Inits Tfod
     private void initTfod() {
         int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
                 "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
+        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);   
         tfodParameters.minResultConfidence = 0.8f;
         tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
         tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
         tfod.activate();
-    } //Inits Tfod
-
+    } 
+    
+    //Sets both launcher motors to specified power
     private void setShooterPower(double power) {
         firstLauncher.setPower(power);
-        secondLauncher.setPower(power);
+        secondLauncher.setPower(power);                                     
         sleep(1000);
     }
 
+    //Sets motor encoders to STOP_AND_RESET
     private void stopAndReset() {
         backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);         
+        backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);  
         frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-    } //Sets motor encoders to STOP_AND_RESET
+    } 
 
+    //Sets motor encoders to RUN_TO_POSITION
     private void runToPosition() {
         backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);                 
         backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-    } //Sets motor encoders to RUN_TO_POSITION
+    } 
 
+    //Sets target motor position. To be used between stopAndReset() and runToPosition()
     private void setMotorPosition(int position) {
         backRight.setTargetPosition(position);
-        frontRight.setTargetPosition(position);
-        backLeft.setTargetPosition(position);
+        frontRight.setTargetPosition(position);                              
+        backLeft.setTargetPosition(position);            
         frontLeft.setTargetPosition(position);
     }
 
+    //Inits actuators
     private void initMotorsServos() {
 
         backRight = hardwareMap.get(DcMotor.class, "backRight");
@@ -93,10 +97,10 @@ public class ActualMainAuto extends LinearOpMode {
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
 
         firstLauncher = hardwareMap.get(DcMotor.class, "firstLauncher");
-        secondLauncher = hardwareMap.get(DcMotor.class, "secondLauncher");
+        secondLauncher = hardwareMap.get(DcMotor.class, "secondLauncher");   
 
         lifter = hardwareMap.get(Servo.class, "lifter");
-        shifter = hardwareMap.get(Servo.class, "shifter");
+        shifter = hardwareMap.get(Servo.class, "shifter");                                                   
 
         lifter.setPosition(0.87);
         shifter.setPosition(1);
@@ -109,14 +113,15 @@ public class ActualMainAuto extends LinearOpMode {
 
         stopAndReset();
 
-    }           //It inits motors. And servos. Obviously.
+    }          
 
+    //Returns A, B, or C depending on amount of rings 
     private String gettargetZone() {
 
         String targetZone;
 
         // Get a list of recognitions from TFOD.
-        List<Recognition> recognitions = tfod.getUpdatedRecognitions();
+        List<Recognition> recognitions = tfod.getUpdatedRecognitions();     
 
         if (recognitions.size() == 0) {
             telemetry.addData("Target Zone:", "A");
@@ -132,15 +137,16 @@ public class ActualMainAuto extends LinearOpMode {
         }
         telemetry.update();
         return targetZone;
-    }      //Returns A, B, or C depending on amount of rings
+    }     
 
+    //Initial movement of robot in auto. Move forward to stack with specified position and power.
     private void initialMovement(double power, int distance) {
 
         setMotorPosition(distance);
 
         runToPosition();
 
-        backRight.setPower(power);
+        backRight.setPower(power);                                          
         frontRight.setPower(power);
         backLeft.setPower(power);
         frontLeft.setPower(power);
@@ -161,9 +167,10 @@ public class ActualMainAuto extends LinearOpMode {
 
     }
 
+    //Empties 3 rings at specified power
     private void shoot(double power) {
         setShooterPower(power);
-        telemetry.addData("power", firstLauncher.getPower());
+        telemetry.addData("power", firstLauncher.getPower());            
         telemetry.update();
         for (int i = 0; i < 3; i++) {
             shifter.setPosition(0.57);
@@ -179,7 +186,6 @@ public class ActualMainAuto extends LinearOpMode {
 
         telemetry.addData("Ready:", "False");
         telemetry.update();
-        String target;
         initVuforia();
         initTfod();
         initMotorsServos();
