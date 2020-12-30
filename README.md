@@ -1,7 +1,5 @@
 # ROBOTICS-2021
 
-bad code
+Current contributors: 
 
-Put ideas in readme in main branch
-
-do not edit code withoug sending pull request
+Kevin Wakakuwa
