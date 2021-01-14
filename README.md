@@ -1,9 +1,10 @@
 # ROBOTICS-2021
 
 AUTO OBJECTIVES:
-1. Score 3 rings in top goal --one finished begin work on powershots
+1. Score 3 rings in top goal --once finished begin work on powershots
 2. Deliver Wobble Goal
 3. Park
+
 Bonus: ...Vuforia?
 
 TELEOP OBJECTIVES:
