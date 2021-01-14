@@ -20,7 +20,7 @@ public class TheOneAndOnly extends LinearOpMode {
     private Servo lifter;
     private Servo shifter;
 
-    private double shooterPower = 0.8;
+    private double shooterPower = 0.5;
 
     @Override
     public void runOpMode() {
@@ -50,6 +50,7 @@ public class TheOneAndOnly extends LinearOpMode {
 
         while (opModeIsActive()) {
 
+            //shitty way of assigning power
             double rightPower = -gamepad1.right_stick_y;
             double leftPower = gamepad1.left_stick_y;
 
@@ -58,27 +59,32 @@ public class TheOneAndOnly extends LinearOpMode {
             backLeft.setPower(leftPower);
             frontLeft.setPower(leftPower);
 
+            //charges shooter
             if (gamepad1.left_trigger > 0) {
                 setShooterPower(shooterPower);
             } else if (gamepad1.left_trigger == 0) {
                 setShooterPower(0);
             }
 
+            //shoots one ring...shooter must be charged first with left trigger
             if (gamepad1.a) {
                 shifter.setPosition(0.57);
                 sleep(500);
                 shifter.setPosition(1);
             }
 
+            //increments power of shooter up
             if (gamepad1.dpad_up) {
                 shooterPower += 0.01;
                 sleep(200);
             }
-
+                                                                            
+            //increments power of shooter down
             if (gamepad1.dpad_down) {
                 shooterPower -= 0.01;
                 sleep(200);
             }
+            //moves lifter down incrementally, so it doesn't jerk down
             if (gamepad1.x) {
                 double position = 0.87;
 
@@ -90,6 +96,7 @@ public class TheOneAndOnly extends LinearOpMode {
                 }
             }
 
+            //moves lifter up
             if (gamepad1.y) {
                 lifter.setPosition(0.87);
             }
@@ -99,6 +106,7 @@ public class TheOneAndOnly extends LinearOpMode {
         }
     }
 
+    //stupid, unnessecary method. 
     private void setShooterPower(double power) {
         firstLauncher.setPower(power);
         secondLauncher.setPower(power);
