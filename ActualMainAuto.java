@@ -31,64 +31,55 @@ public class ActualMainAuto extends LinearOpMode {
     private DcMotor backLeft;
     private DcMotor firstLauncher;
     private DcMotor secondLauncher;
+    private DcMotor wobbler;
     private Servo lifter;
     private Servo shifter;
+    private Servo grabber;
 
-    //Inits Vuforia
-    
+
     private void initVuforia() {
 
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+
         parameters.vuforiaLicenseKey = VUFORIA_KEY;
-        parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;                               //Inits Vuforia
+        parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;
+
         //  Instantiate the Vuforia engine
         vuforia = ClassFactory.getInstance().createVuforia(parameters);
+
         // Loading trackables is not necessary for the TensorFlow Object Detection engine.
-    }  
-    
-    //Inits Tfod
+    }     //Inits Vuforis
+
     private void initTfod() {
         int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
                 "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);   
+        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
         tfodParameters.minResultConfidence = 0.8f;
         tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
         tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
         tfod.activate();
-    } 
-    
-    //Sets both launcher motors to specified power
+    } //Inits Tfod
+
     private void setShooterPower(double power) {
         firstLauncher.setPower(power);
-        secondLauncher.setPower(power);                                     
+        secondLauncher.setPower(power);
         sleep(1000);
     }
 
-    //Sets motor encoders to STOP_AND_RESET
-    private void stopAndReset() {
-        backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);         
-        backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);  
-        frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-    } 
-
-    //Sets motor encoders to RUN_TO_POSITION
     private void runToPosition() {
         backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);                 
+        frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-    } 
+    } //Sets motor encoders to RUN_TO_POSITION
 
-    //Sets target motor position. To be used between stopAndReset() and runToPosition()
-    private void setMotorPosition(int position) {
-        backRight.setTargetPosition(position);
-        frontRight.setTargetPosition(position);                              
-        backLeft.setTargetPosition(position);            
-        frontLeft.setTargetPosition(position);
+    private void setMotorPosition(int rightPosition, int leftPosition) {
+        backRight.setTargetPosition(rightPosition);
+        frontRight.setTargetPosition(rightPosition);
+        backLeft.setTargetPosition(leftPosition);
+        frontLeft.setTargetPosition(leftPosition);
     }
 
-    //Inits actuators
     private void initMotorsServos() {
 
         backRight = hardwareMap.get(DcMotor.class, "backRight");
@@ -97,31 +88,40 @@ public class ActualMainAuto extends LinearOpMode {
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
 
         firstLauncher = hardwareMap.get(DcMotor.class, "firstLauncher");
-        secondLauncher = hardwareMap.get(DcMotor.class, "secondLauncher");   
+        secondLauncher = hardwareMap.get(DcMotor.class, "secondLauncher");
+        wobbler = hardwareMap.get(DcMotor.class, "wobbler");
 
         lifter = hardwareMap.get(Servo.class, "lifter");
-        shifter = hardwareMap.get(Servo.class, "shifter");                                                   
-
-        lifter.setPosition(0.87);
-        shifter.setPosition(1);
+        shifter = hardwareMap.get(Servo.class, "shifter");
+        grabber = hardwareMap.get(Servo.class, "grabber");
 
         backLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         frontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        backRight.setDirection(DcMotorSimple.Direction.FORWARD);
+        frontRight.setDirection(DcMotorSimple.Direction.FORWARD);
 
         firstLauncher.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         secondLauncher.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        wobbler.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        wobbler.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        stopAndReset();
+        grabber.setPosition(0.55);
+        sleep(200);
+        wobbler.setPower(0.7);
+        sleep(700);
+        wobbler.setPower(0);
+        lifter.setPosition(0.87);
+        shifter.setPosition(1);
 
-    }          
 
-    //Returns A, B, or C depending on amount of rings 
-    private String gettargetZone() {
+    }           //It inits motors. And servos. Obviously.
+
+    private String getTargetZone() {
 
         String targetZone;
 
         // Get a list of recognitions from TFOD.
-        List<Recognition> recognitions = tfod.getUpdatedRecognitions();     
+        List<Recognition> recognitions = tfod.getUpdatedRecognitions();
 
         if (recognitions.size() == 0) {
             telemetry.addData("Target Zone:", "A");
@@ -137,21 +137,25 @@ public class ActualMainAuto extends LinearOpMode {
         }
         telemetry.update();
         return targetZone;
-    }     
+    }      //Returns A, B, or C depending on amount of rings
 
-    //Initial movement of robot in auto. Move forward to stack with specified position and power.
-    private void initialMovement(double power, int distance) {
+    private void movement(int rightDistance, int leftDistance, double power) {
 
-        setMotorPosition(distance);
+        backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        runToPosition();
+        setMotorPosition(rightDistance, leftDistance);
 
-        backRight.setPower(power);                                          
+        backRight.setPower(power);
         frontRight.setPower(power);
         backLeft.setPower(power);
         frontLeft.setPower(power);
 
-        while (backRight.isBusy() && backLeft.isBusy() && frontRight.isBusy() && frontLeft.isBusy()) {
+        runToPosition();
+
+        while ((frontRight.isBusy() || frontLeft.isBusy() || backRight.isBusy() || backLeft.isBusy()) && opModeIsActive()) {
             //Waits for the motors to finish moving & prints 2 CurrentPositions
             telemetry.addData("FrontLeft Position: ", frontLeft.getCurrentPosition() + "  busy=" + frontLeft.isBusy());
             telemetry.addData("FrontRight Position: ", frontRight.getCurrentPosition() + "  busy=" + frontRight.isBusy());
@@ -163,20 +167,21 @@ public class ActualMainAuto extends LinearOpMode {
         backLeft.setPower(0);
         frontLeft.setPower(0);
 
-        stopAndReset();
+        sleep(250);
 
-    }
+    } //Pretty Obvious
 
-    //Empties 3 rings at specified power
+
     private void shoot(double power) {
         setShooterPower(power);
-        telemetry.addData("power", firstLauncher.getPower());            
+        sleep(500);
+        telemetry.addData("power", firstLauncher.getPower());
         telemetry.update();
         for (int i = 0; i < 3; i++) {
             shifter.setPosition(0.57);
             sleep(500);
             shifter.setPosition(1);
-            sleep(500);
+            sleep(800);
         }
         setShooterPower(0);
     }
@@ -184,47 +189,93 @@ public class ActualMainAuto extends LinearOpMode {
     @Override
     public void runOpMode() {
 
-        telemetry.addData("Ready:", "False");
+        telemetry.addData("Ready", "False");
         telemetry.update();
         initVuforia();
         initTfod();
         initMotorsServos();
 
-        telemetry.addData("Ready:", "True");
+        telemetry.addData("Ready", "True");
         telemetry.update();
+
         waitForStart();
         if (opModeIsActive()) {
 
-            shoot(0.8);
-
-            initialMovement(0.8, 5000);
-
-            if (tfod != null) {
-
-                String targetZone = gettargetZone();
-                sleep(5000);
-                telemetry.addData("Target Zone:", targetZone);
-
-                sleep(5000);
+            movement(5000, 5000, 1);
 
 
-                if (targetZone.equals("A")) {
-                    // Go to zone A
-                } else if (targetZone.equals("B")) {
-                    // Go to Zone B
-                } else {
-                    // Go to Zone C
-                }
+            sleep(5000);
+            String targetZone = getTargetZone();
+
+            telemetry.addData("Target Zone:", targetZone);
+            telemetry.update();
+
+            tfod.deactivate();
+
+            movement(8000, 8000, 1);
+
+            movement(0, 800, 1);
+
+            shoot(0.46);
+
+            if (targetZone.equals("A")) {
+
+                movement(-2000, -2000, 1);
+
+                movement(13000, 0, 1.0);
+
+                telemetry.addData("cock", "balls");
+                telemetry.update();
+
+                sleep(2000);
+
+                //WHAT THE FUUUUUUUUCK
+
+                grabber.setPosition(0.9);
+                sleep(500);
+                wobbler.setPower(-0.7);
+                sleep(800);
+                wobbler.setPower(0);
+                backLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+                frontLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+                backRight.setDirection(DcMotorSimple.Direction.REVERSE);
+                frontRight.setDirection(DcMotorSimple.Direction.REVERSE);
+                movement(3000, 3000, 1.0);
+                sleep(500);
+
+            } else if (targetZone.equals("B")) {
+
+                movement(14000, 6000, 1.0);
+                lifter.setPosition(0);
+                grabber.setPosition(0.9);
+                sleep(500);
+                wobbler.setPower(-0.7);
+                sleep(800);
+                wobbler.setPower(0);
+
             } else {
-                //Go to zone A
+                movement(800, 0, 1);
+                backLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+                frontLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+
+                movement(2000, 2000, 1);
+                backRight.setDirection(DcMotorSimple.Direction.REVERSE);
+                frontRight.setDirection(DcMotorSimple.Direction.REVERSE);
+
+                movement(10000, 10000, 1);
+
+                lifter.setPosition(0);
+                grabber.setPosition(0.9);
+                sleep(500);
+                wobbler.setPower(-0.7);
+                sleep(800);
+                wobbler.setPower(0);
+
             }
 
+
         }
-        // Deactivate TFOD.
-        if (tfod != null) {
-            tfod.deactivate();
-        }
+
     }
 
 }
-
