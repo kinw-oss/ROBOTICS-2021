@@ -9,12 +9,10 @@ import com.qualcomm.robotcore.hardware.Servo;
 import java.util.List;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
-import org.firstinspires.ftc.robotcore.external.JavaUtil;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaCurrentGame;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
-import org.firstinspires.ftc.robotcore.external.tfod.TfodCurrentGame;
+
 
 @Autonomous(name = "ActualMainAuto")
 public class ActualMainAuto extends LinearOpMode {
@@ -106,7 +104,6 @@ public class ActualMainAuto extends LinearOpMode {
         wobbler.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         grabber.setPosition(0.55);
-        sleep(200);
         wobbler.setPower(0.7);
         sleep(700);
         wobbler.setPower(0);
@@ -118,24 +115,24 @@ public class ActualMainAuto extends LinearOpMode {
 
     private String getTargetZone() {
 
-        String targetZone;
+        String targetZone = null;
 
         // Get a list of recognitions from TFOD.
-        List<Recognition> recognitions = tfod.getUpdatedRecognitions();
+        List<Recognition> recognitions = tfod.getRecognitions();
 
-        if (recognitions.size() == 0) {
-            telemetry.addData("Target Zone:", "A");
+        if (recognitions.size() == 0 && opModeIsActive()) {
+
             targetZone = "A";
-        } else {
-            if (recognitions.get(0).getLabel().equals("Quad")) {
-                telemetry.addData("Target Zone:", "C");
-                targetZone = "C";
-            } else {
-                telemetry.addData("Target Zone:", "B");
-                targetZone = "B";
-            }
         }
-        telemetry.update();
+        if (recognitions.size() > 0 && recognitions.get(0).getLabel().equals("Quad") && opModeIsActive()) {
+
+            targetZone = "C";
+        } else if (recognitions.size() > 0 && recognitions.get(0).getLabel().equals("Single") && opModeIsActive()){
+
+            targetZone = "B";
+        }
+
+
         return targetZone;
     }      //Returns A, B, or C depending on amount of rings
 
@@ -155,7 +152,7 @@ public class ActualMainAuto extends LinearOpMode {
 
         runToPosition();
 
-        while ((frontRight.isBusy() || frontLeft.isBusy() || backRight.isBusy() || backLeft.isBusy()) && opModeIsActive()) {
+        while (opModeIsActive() && (frontRight.isBusy() || frontLeft.isBusy() || backRight.isBusy() || backLeft.isBusy())) {
             //Waits for the motors to finish moving & prints 2 CurrentPositions
             telemetry.addData("FrontLeft Position: ", frontLeft.getCurrentPosition() + "  busy=" + frontLeft.isBusy());
             telemetry.addData("FrontRight Position: ", frontRight.getCurrentPosition() + "  busy=" + frontRight.isBusy());
@@ -167,7 +164,7 @@ public class ActualMainAuto extends LinearOpMode {
         backLeft.setPower(0);
         frontLeft.setPower(0);
 
-        sleep(250);
+        sleep(200);
 
     } //Pretty Obvious
 
@@ -199,18 +196,20 @@ public class ActualMainAuto extends LinearOpMode {
         telemetry.update();
 
         waitForStart();
-        if (opModeIsActive()) {
+
+        while (opModeIsActive()) {
 
             movement(5000, 5000, 1);
 
 
-            sleep(5000);
+            sleep(3000);
             String targetZone = getTargetZone();
+
+            tfod.shutdown();
 
             telemetry.addData("Target Zone:", targetZone);
             telemetry.update();
 
-            tfod.deactivate();
 
             movement(8000, 8000, 1);
 
@@ -218,64 +217,64 @@ public class ActualMainAuto extends LinearOpMode {
 
             shoot(0.46);
 
-            if (targetZone.equals("A")) {
+            switch (targetZone) {
+                case "A":
 
-                movement(-2000, -2000, 1);
+                    movement(-2000, -2000, 1);
 
-                movement(13000, 0, 1.0);
+                    movement(13000, 0, 1.0);
 
-                telemetry.addData("cock", "balls");
-                telemetry.update();
+                    telemetry.addData("cock", "balls");
+                    telemetry.update();
 
-                sleep(2000);
+                    //WHAT THE FUUUUUUUUCK
 
-                //WHAT THE FUUUUUUUUCK
+                    grabber.setPosition(0.9);
+                    sleep(500);
+                    wobbler.setPower(-0.7);
+                    sleep(800);
+                    wobbler.setPower(0);
+                    telemetry.addData("cock&ball", "torture");
+                    telemetry.update();
+                    sleep(500);
+                    movement(-3000, -3000, 1.0);
 
-                grabber.setPosition(0.9);
-                sleep(500);
-                wobbler.setPower(-0.7);
-                sleep(800);
-                wobbler.setPower(0);
-                backLeft.setDirection(DcMotorSimple.Direction.FORWARD);
-                frontLeft.setDirection(DcMotorSimple.Direction.FORWARD);
-                backRight.setDirection(DcMotorSimple.Direction.REVERSE);
-                frontRight.setDirection(DcMotorSimple.Direction.REVERSE);
-                movement(3000, 3000, 1.0);
-                sleep(500);
+                    telemetry.addData("William", "Perri");
+                    telemetry.update();
+                    break;
+                case "B":
 
-            } else if (targetZone.equals("B")) {
+                    movement(14000, 6000, 1.0);
+                    lifter.setPosition(0);
+                    grabber.setPosition(0.9);
+                    sleep(500);
+                    wobbler.setPower(-0.7);
+                    sleep(800);
+                    wobbler.setPower(0);
 
-                movement(14000, 6000, 1.0);
-                lifter.setPosition(0);
-                grabber.setPosition(0.9);
-                sleep(500);
-                wobbler.setPower(-0.7);
-                sleep(800);
-                wobbler.setPower(0);
+                    break;
+                case "C":
+                    movement(800, 0, 1);
 
-            } else {
-                movement(800, 0, 1);
-                backLeft.setDirection(DcMotorSimple.Direction.FORWARD);
-                frontLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+                    movement(10000, -10000, 1);
 
-                movement(2000, 2000, 1);
-                backRight.setDirection(DcMotorSimple.Direction.REVERSE);
-                frontRight.setDirection(DcMotorSimple.Direction.REVERSE);
+                    movement(-20000, -20000, 1);
 
-                movement(10000, 10000, 1);
+                    lifter.setPosition(0);
+                    grabber.setPosition(0.9);
+                    sleep(500);
+                    wobbler.setPower(-0.7);
+                    sleep(800);
+                    wobbler.setPower(0);
 
-                lifter.setPosition(0);
-                grabber.setPosition(0.9);
-                sleep(500);
-                wobbler.setPower(-0.7);
-                sleep(800);
-                wobbler.setPower(0);
+                    movement(20000, 20000, 1);
 
+                    break;
             }
-
 
         }
 
     }
 
 }
+
