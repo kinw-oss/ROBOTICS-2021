@@ -164,7 +164,7 @@ public class ActualMainAuto extends LinearOpMode {
         backLeft.setPower(0);
         frontLeft.setPower(0);
 
-        sleep(200);
+        
 
     } //Pretty Obvious
 
