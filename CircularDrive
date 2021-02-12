@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
 
@@ -27,13 +28,36 @@ public class CircularDrive extends LinearOpMode {
         frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        frontRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        backRight.setDirection(DcMotorSimple.Direction.REVERSE);
 
         waitForStart();
 
         while (opModeIsActive()) {
-            
-            double turnPower = gamepad1.left_stick_x;
-            
+
         }
     }
 }
+
+/*
+
+ANGLES AND CORRESPONDING POWERS
+
+0: motors should be 1, -1, -1, 1
+
+pi/4: 1, 0, 0, 1
+
+pi/2: 1, 1, 1, 1
+
+3pi/4: 0, 1, 1, 0
+
+pi: -1, 1, 1, -1
+
+5pi/4: -1, 0, 0, -1
+
+3pi/2: -1, -1, -1, -1
+
+7pi/4: 0, -1, -1, 0
+
+
+*/
