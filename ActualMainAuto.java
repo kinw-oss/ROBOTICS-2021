@@ -4,14 +4,15 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
-
-import java.util.List;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
+
+import java.util.List;
 
 
 @Autonomous(name = "ActualMainAuto")
@@ -23,63 +24,10 @@ public class ActualMainAuto extends LinearOpMode {
     private static final String VUFORIA_KEY = "ASDZYK3/////AAABmcPs4lemSEC6kHBUD5lpAQRxx5U+vJZBQeR+erp7dMnyf5eZnu5FO9XXrTfzX2BSltfkw3Rn2lpjoxhIk12n7fFiRQoi0CLQFbulEDE4FXJxJZWD5jHsDsn3J/Dp4flFNSmUiGDe88clC0BEplIXOEdqPqr1JV4WN2fR/9jVDFt2BUW/l+hI42++7hmaEgmPb69uIvOVpIVLvTqUJ4i78PxlGHW+uYj6tZjEYJbJBQrJC/YBJ2K2MP+iA+UVZhfirrDXct87srSKAim4p0EHNMvdUczqh29L/+5KZUHtGGYuNvZAvp/rbceDlgz8EIoxHgxTMWuAfGJeD0lfv+nJ5zooRNqLYeEO6SnIr6oAvsHV";
     private VuforiaLocalizer vuforia;
     private TFObjectDetector tfod;
-    private DcMotor backRight;
-    private DcMotor frontRight;
-    private DcMotor frontLeft;
-    private DcMotor backLeft;
-    private DcMotor firstLauncher;
-    private DcMotor secondLauncher;
-    private DcMotor wobbler;
-    private Servo lifter;
-    private Servo shifter;
-    private Servo grabber;
+    private DcMotor backRight, frontRight, frontLeft, backLeft, firstLauncher, secondLauncher, wobbler;
+    private Servo lifter, shifter, grabber;
 
-
-    private void initVuforia() {
-
-        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
-
-        parameters.vuforiaLicenseKey = VUFORIA_KEY;
-        parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;
-
-        //  Instantiate the Vuforia engine
-        vuforia = ClassFactory.getInstance().createVuforia(parameters);
-
-        // Loading trackables is not necessary for the TensorFlow Object Detection engine.
-    }     //Inits Vuforis
-
-    private void initTfod() {
-        int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
-                "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
-        tfodParameters.minResultConfidence = 0.8f;
-        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
-        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
-        tfod.activate();
-    } //Inits Tfod
-
-    private void setShooterPower(double power) {
-        firstLauncher.setPower(power);
-        secondLauncher.setPower(power);
-        sleep(1000);
-    }
-
-    private void runToPosition() {
-        backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-    } //Sets motor encoders to RUN_TO_POSITION
-
-    private void setMotorPosition(int rightPosition, int leftPosition) {
-        backRight.setTargetPosition(rightPosition);
-        frontRight.setTargetPosition(rightPosition);
-        backLeft.setTargetPosition(leftPosition);
-        frontLeft.setTargetPosition(leftPosition);
-    }
-
-    private void initMotorsServos() {
-
+    protected void initHardware() {
         backRight = hardwareMap.get(DcMotor.class, "backRight");
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
@@ -98,65 +46,71 @@ public class ActualMainAuto extends LinearOpMode {
         backRight.setDirection(DcMotorSimple.Direction.FORWARD);
         frontRight.setDirection(DcMotorSimple.Direction.FORWARD);
 
+        backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
         firstLauncher.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         secondLauncher.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         wobbler.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         wobbler.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        grabber.setPosition(0.55);
-        wobbler.setPower(0.7);
-        sleep(700);
-        wobbler.setPower(0);
-        lifter.setPosition(0.87);
-        shifter.setPosition(1);
+        grabber.setPosition(0.2);
+        lifter.setPosition(0.6);
+    }
 
+    protected void initVision() {
 
-    }           //It inits motors. And servos. Obviously.
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
-    private String getTargetZone() {
+        parameters.vuforiaLicenseKey = VUFORIA_KEY;
+        parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;
 
-        String targetZone = null;
+        //  Instantiate the Vuforia engine
+        vuforia = ClassFactory.getInstance().createVuforia(parameters);
 
-        // Get a list of recognitions from TFOD.
-        List<Recognition> recognitions = tfod.getRecognitions();
+        // Loading trackables is not necessary for the TensorFlow Object Detection engine.
 
-        if (recognitions.size() == 0 && opModeIsActive()) {
+        int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
+                "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
+        tfodParameters.minResultConfidence = 0.8f;
+        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
+        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
+        tfod.activate();
+    }
 
-            targetZone = "A";
-        }
-        if (recognitions.size() > 0 && recognitions.get(0).getLabel().equals("Quad") && opModeIsActive()) {
-
-            targetZone = "C";
-        } else if (recognitions.size() > 0 && recognitions.get(0).getLabel().equals("Single") && opModeIsActive()){
-
-            targetZone = "B";
-        }
-
-
-        return targetZone;
-    }      //Returns A, B, or C depending on amount of rings
-
-    private void movement(int rightDistance, int leftDistance, double power) {
+    protected void movement(int FLDistance, int FRDistance, int BLDistance, int BRDistance, double power) {
 
         backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        setMotorPosition(rightDistance, leftDistance);
+        backRight.setTargetPosition(BRDistance);
+        frontRight.setTargetPosition(FRDistance);
+        backLeft.setTargetPosition(BLDistance);
+        frontLeft.setTargetPosition(FLDistance);
+
+        backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         backRight.setPower(power);
         frontRight.setPower(power);
         backLeft.setPower(power);
         frontLeft.setPower(power);
 
-        runToPosition();
-
-        while (opModeIsActive() && (frontRight.isBusy() || frontLeft.isBusy() || backRight.isBusy() || backLeft.isBusy())) {
+        while ((frontRight.isBusy() || frontLeft.isBusy() || backRight.isBusy() || backLeft.isBusy()) && opModeIsActive()) {
             //Waits for the motors to finish moving & prints 2 CurrentPositions
-            telemetry.addData("FrontLeft Position: ", frontLeft.getCurrentPosition() + "  busy=" + frontLeft.isBusy());
-            telemetry.addData("FrontRight Position: ", frontRight.getCurrentPosition() + "  busy=" + frontRight.isBusy());
+            telemetry.addData("frontLeft=", frontLeft.getCurrentPosition());
+            telemetry.addData("frontRight=", frontRight.getCurrentPosition());
+            telemetry.addData("backLeft=", backLeft.getCurrentPosition());
+            telemetry.addData("backRight=", backRight.getCurrentPosition());
             telemetry.update();
+
         }
 
         backRight.setPower(0);
@@ -164,23 +118,44 @@ public class ActualMainAuto extends LinearOpMode {
         backLeft.setPower(0);
         frontLeft.setPower(0);
 
-        sleep(200);
+    }
 
-    } //Pretty Obvious
+    protected String getTargetZone() {
+
+        String targetZone = null;
+
+        // Get a list of recognitions from TFOD.
+        List<Recognition> recognitions = tfod.getRecognitions();
+
+        if (recognitions.size() == 0) {
+
+            targetZone = "A";
+        }
+        if (recognitions.size() > 0 && recognitions.get(0).getLabel().equals("Quad")) {
+
+            targetZone = "C";
+        } else if (recognitions.size() > 0 && recognitions.get(0).getLabel().equals("Single")){
+
+            targetZone = "B";
+        }
 
 
-    private void shoot(double power) {
-        setShooterPower(power);
-        sleep(500);
-        telemetry.addData("power", firstLauncher.getPower());
-        telemetry.update();
+        return targetZone;
+    }
+
+    protected void shoot3(double power) {
+        firstLauncher.setPower(power);
+        secondLauncher.setPower(power);
+        sleep(1500);
         for (int i = 0; i < 3; i++) {
             shifter.setPosition(0.57);
             sleep(500);
             shifter.setPosition(1);
             sleep(800);
         }
-        setShooterPower(0);
+        firstLauncher.setPower(0);
+        secondLauncher.setPower(0);
+
     }
 
     @Override
@@ -188,18 +163,18 @@ public class ActualMainAuto extends LinearOpMode {
 
         telemetry.addData("Ready", "False");
         telemetry.update();
-        initVuforia();
-        initTfod();
-        initMotorsServos();
+        
+        initHardware();
+        initVision();
 
         telemetry.addData("Ready", "True");
         telemetry.update();
 
         waitForStart();
 
-        while (opModeIsActive()) {
+        if (opModeIsActive() && !isStopRequested()) {
 
-            movement(5000, 5000, 1);
+            movement(700, 700, 700, 700, 0.3);
 
 
             sleep(3000);
@@ -211,18 +186,32 @@ public class ActualMainAuto extends LinearOpMode {
             telemetry.update();
 
 
-            movement(8000, 8000, 1);
+            movement(2300, 0, 0, 2300, 0.5);
 
-            movement(0, 800, 1);
+            movement(700, 700, 700, 700, 0.5);
 
-            shoot(0.46);
+            wobbler.setPower(0.8);
+            sleep(700);
+            wobbler.setPower(0);
 
+            lifter.setPosition(0.86);
+
+            firstLauncher.setPower(0.41);
+            secondLauncher.setPower(0.41);
+            sleep(1500);
+            for (int i = 0; i < 3; i++) {
+                shifter.setPosition(0.57);
+                sleep(500);
+                shifter.setPosition(1);
+                sleep(500);
+            }
+            /*
             switch (targetZone) {
                 case "A":
 
-                    movement(-2000, -2000, 1);
+                    //movement(-2000, -2000, 1);
 
-                    movement(13000, 0, 1.0);
+                    //movement(13000, 0, 1.0);
 
                     telemetry.addData("cock", "balls");
                     telemetry.update();
@@ -237,29 +226,36 @@ public class ActualMainAuto extends LinearOpMode {
                     telemetry.addData("cock&ball", "torture");
                     telemetry.update();
                     sleep(500);
-                    movement(-3000, -3000, 1.0);
+                    //movement(-3000, -3000, 1.0);
 
                     telemetry.addData("William", "Perri");
                     telemetry.update();
                     break;
                 case "B":
 
-                    movement(14000, 6000, 1.0);
+                    //movement(14000, 6000, 1.0);
+                    telemetry.addData("cock&ball", "torture");
+                    telemetry.update();
                     lifter.setPosition(0);
                     grabber.setPosition(0.9);
                     sleep(500);
                     wobbler.setPower(-0.7);
                     sleep(800);
                     wobbler.setPower(0);
+                    telemetry.addData("William", "Perri");
+                    telemetry.update();
+                    sleep(3000);
 
                     break;
                 case "C":
-                    movement(800, 0, 1);
+                    //movement(800, 0, 1);
 
-                    movement(10000, -10000, 1);
+                    //movement(10000, -10000, 1);
 
-                    movement(-20000, -20000, 1);
+                    //movement(-20000, -20000, 1);
 
+                    telemetry.addData("cock&ball", "torture");
+                    telemetry.update();
                     lifter.setPosition(0);
                     grabber.setPosition(0.9);
                     sleep(500);
@@ -267,14 +263,19 @@ public class ActualMainAuto extends LinearOpMode {
                     sleep(800);
                     wobbler.setPower(0);
 
-                    movement(20000, 20000, 1);
+                    telemetry.addData("William", "Perri");
+                    telemetry.update();
+                    //movement(20000, 20000, 1);
+                    telemetry.addData("cock", "balls");
+                    telemetry.update();
 
                     break;
             }
-
+            */
         }
 
     }
 
 }
+
 
