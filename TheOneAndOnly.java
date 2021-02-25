@@ -60,28 +60,24 @@ public class TheOneAndOnly extends LinearOpMode {
             double leftPower = gamepad1.left_stick_y;
             double wobblerPower = gamepad2.left_stick_x/1.5;
 
-            backRight.setPower(rightPower);
-            backLeft.setPower(leftPower);
-            frontRight.setPower(rightPower);
-            frontLeft.setPower(leftPower);
-
-            wobbler.setPower(wobblerPower);
-
-            //strafe left
             if (gamepad1.dpad_left) {
                 backRight.setPower(-strafePower);
                 frontRight.setPower(strafePower);
-                backLeft.setPower(strafePower);
-                frontLeft.setPower(-strafePower);
-            }
-
-            //strafe right
-            if (gamepad1.dpad_right) {
-                backRight.setPower(strafePower);
-                frontRight.setPower(-strafePower);
                 backLeft.setPower(-strafePower);
                 frontLeft.setPower(strafePower);
+            } else if (gamepad1.dpad_right) {
+                backRight.setPower(strafePower);
+                frontRight.setPower(-strafePower);
+                backLeft.setPower(strafePower);
+                frontLeft.setPower(-strafePower);
+            } else {
+                backRight.setPower(rightPower);
+                backLeft.setPower(leftPower);
+                frontRight.setPower(rightPower);
+                frontLeft.setPower(leftPower);
             }
+            
+            wobbler.setPower(wobblerPower);
 
             //start shooter motors
             if (gamepad2.left_trigger > 0) {
