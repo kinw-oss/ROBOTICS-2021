@@ -1,0 +1,67 @@
+    protected void movement(int FLDistance, int FRDistance, int BLDistance, int BRDistance, double power) {
+
+        for (double i = 1; i <= 5; i++) {
+
+            backRight.setTargetPosition(backRight.getCurrentPosition()   + (BRDistance / 10));
+            frontRight.setTargetPosition(frontRight.getCurrentPosition() + (FRDistance / 10));
+            backLeft.setTargetPosition(backLeft.getCurrentPosition()     + (BLDistance / 10));
+            frontLeft.setTargetPosition(frontLeft.getCurrentPosition()   + (FLDistance / 10));
+
+            backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+            backRight.setPower(i/6);
+            frontRight.setPower(i/6);
+            backLeft.setPower(i/6);
+            frontLeft.setPower(i/6);
+
+            while ((frontRight.isBusy() || frontLeft.isBusy() || backRight.isBusy() || backLeft.isBusy()) && opModeIsActive()) {
+                //Waits for the motors to finish moving & prints 2 CurrentPositions
+                telemetry.addData("frontLeft=", frontLeft.getCurrentPosition());
+                telemetry.addData("frontRight=", frontRight.getCurrentPosition());
+                telemetry.addData("backLeft=", backLeft.getCurrentPosition());
+                telemetry.addData("backRight=", backRight.getCurrentPosition());
+                telemetry.update();
+
+            }
+
+            backRight.setPower(0);
+            frontRight.setPower(0);
+            backLeft.setPower(0);
+            frontLeft.setPower(0);
+
+        }
+
+        backRight.setTargetPosition(backRight.getCurrentPosition()   + (BRDistance/2));
+        frontRight.setTargetPosition(frontRight.getCurrentPosition() + (FRDistance/2));
+        backLeft.setTargetPosition(backLeft.getCurrentPosition()     + (BLDistance/2));
+        frontLeft.setTargetPosition(frontLeft.getCurrentPosition()   + (FLDistance/2));
+
+        backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        backRight.setPower(power);
+        frontRight.setPower(power);
+        backLeft.setPower(power);
+        frontLeft.setPower(power);
+
+        while ((frontRight.isBusy() || frontLeft.isBusy() || backRight.isBusy() || backLeft.isBusy()) && opModeIsActive()) {
+            //Waits for the motors to finish moving & prints 2 CurrentPositions
+            telemetry.addData("frontLeft=", frontLeft.getCurrentPosition());
+            telemetry.addData("frontRight=", frontRight.getCurrentPosition());
+            telemetry.addData("backLeft=", backLeft.getCurrentPosition());
+            telemetry.addData("backRight=", backRight.getCurrentPosition());
+            telemetry.update();
+
+        }
+
+        backRight.setPower(0);
+        frontRight.setPower(0);
+        backLeft.setPower(0);
+        frontLeft.setPower(0);
+
+    }
