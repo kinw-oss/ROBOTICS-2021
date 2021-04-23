@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -15,12 +16,14 @@ public class TheOneAndOnly extends LinearOpMode {
     private DcMotor frontRight;
     private DcMotor frontLeft;
     private DcMotor backLeft;
-    private DcMotor firstLauncher;
+    private CRServo firstLauncher;
     private DcMotor secondLauncher;
     private DcMotor wobbler;
+    private DcMotor roller;
     private Servo lifter;
     private Servo shifter;
     private Servo grabber;
+    private DcMotor roller2;
 
     private double shooterPower = 0.45;
 
@@ -34,32 +37,47 @@ public class TheOneAndOnly extends LinearOpMode {
         backLeft   = hardwareMap.get(DcMotor.class, "backLeft");
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
 
-        firstLauncher  = hardwareMap.get(DcMotor.class, "firstLauncher");
+        firstLauncher  = hardwareMap.get(CRServo.class, "firstLauncher");
         secondLauncher = hardwareMap.get(DcMotor.class, "secondLauncher");
         wobbler        = hardwareMap.get(DcMotor.class, "wobbler");
+        roller         = hardwareMap.get(DcMotor.class, "roller");
+        roller2        = hardwareMap.get(DcMotor.class, "roller2");
 
         backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        firstLauncher.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        roller2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         secondLauncher.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        wobbler.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
 
         lifter  = hardwareMap.get(Servo.class, "lifter");
         shifter = hardwareMap.get(Servo.class, "shifter");
         grabber = hardwareMap.get(Servo.class, "grabber");
 
+
         shifter.setPosition(1);
         grabber.setPosition(0.9);
 
         while (opModeIsActive()) {
 
-            double strafePower = 1;
-            double rightPower = -gamepad1.right_stick_y;
-            double leftPower = gamepad1.left_stick_y;
-            double wobblerPower = gamepad2.left_stick_x/1.5;
+            double strafePower    = 1;
+            double lifterPosition = lifter.getPosition();
+            double rightPower     = -gamepad1.right_stick_y;
+            double leftPower      = gamepad1.left_stick_y;
+            double wobblerPower   = gamepad2.left_stick_y/1.5;
+            double roller2Power   = -0.5;
 
+            wobbler.setPower(wobblerPower);
+
+            //strafe left
             if (gamepad1.dpad_left) {
                 backRight.setPower(-strafePower);
                 frontRight.setPower(strafePower);
@@ -76,14 +94,27 @@ public class TheOneAndOnly extends LinearOpMode {
                 frontRight.setPower(rightPower);
                 frontLeft.setPower(leftPower);
             }
-            
-            wobbler.setPower(wobblerPower);
+
+            if (gamepad1.dpad_up) {
+                lifterPosition += 0.01;
+                lifter.setPosition(lifterPosition);
+                sleep(100);
+            }
+
+            if (gamepad1.dpad_down) {
+                lifterPosition -= 0.01;
+                lifter.setPosition(lifterPosition);
+                sleep(100);
+            }
 
             //start shooter motors
             if (gamepad2.left_trigger > 0) {
-                setShooterPower(shooterPower);
+
+                firstLauncher.setPower(-1);
+                secondLauncher.setPower(0.5);
             } else {
-                setShooterPower(0);
+                firstLauncher.setPower(0);
+                secondLauncher.setPower(0);
             }
 
             //shoot 1 ring
@@ -107,19 +138,28 @@ public class TheOneAndOnly extends LinearOpMode {
 
             //smoothly moves lifter down to retrieval position
             if (gamepad2.x) {
-                lifter.setPosition(0.5);
+                lifter.setPosition(0.65);
             }
 
             //moves lifter up to shooting position
             if (gamepad2.y) {
-                lifter.setPosition(0.86);
+                lifter.setPosition(0.95);
+            }
+            if (gamepad2.dpad_up) {
+                roller.setPower(1);
+                roller2.setPower(roller2Power);
+            } else {
+                roller.setPower(0);
+                roller2.setPower(0);
             }
 
             if (gamepad2.right_bumper) {
-                grabber.setPosition(grabber.getPosition() + 0.01);
+                roller2Power += 0.01;
+                sleep(150);
             }
             if (gamepad2.left_bumper) {
-                grabber.setPosition(grabber.getPosition() - 0.01);
+                roller2Power -= 0.01;
+                sleep(150);
             }
 
 
@@ -128,15 +168,15 @@ public class TheOneAndOnly extends LinearOpMode {
             telemetry.addData("Right Power", rightPower);
             telemetry.addData("Left Power", leftPower);
             telemetry.addData("Grabber Position", grabber.getPosition());
+            telemetry.addData("Lifter Position", lifter.getPosition());
             telemetry.update();
 
         }
     }
 
     //idk why i have this. utterly useless
-    private void setShooterPower(double power) {
-        firstLauncher.setPower(power);
-        secondLauncher.setPower(power);
-    }
 
 }
+
+
+
