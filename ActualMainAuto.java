@@ -4,8 +4,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
@@ -26,6 +26,7 @@ public class ActualMainAuto extends LinearOpMode {
     private TFObjectDetector tfod;
     private DcMotor backRight, frontRight, frontLeft, backLeft, firstLauncher, secondLauncher, wobbler;
     private Servo lifter, shifter, grabber;
+    private ElapsedTime timer = new ElapsedTime();
 
     protected void initHardware() {
         backRight = hardwareMap.get(DcMotor.class, "backRight");
@@ -51,6 +52,12 @@ public class ActualMainAuto extends LinearOpMode {
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+
         firstLauncher.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         secondLauncher.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         wobbler.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -58,6 +65,7 @@ public class ActualMainAuto extends LinearOpMode {
 
         grabber.setPosition(0.2);
         lifter.setPosition(0.6);
+
     }
 
     protected void initVision() {
@@ -83,15 +91,12 @@ public class ActualMainAuto extends LinearOpMode {
 
     protected void movement(int FLDistance, int FRDistance, int BLDistance, int BRDistance, double power) {
 
-        backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        timer.reset();
 
-        backRight.setTargetPosition(BRDistance);
-        frontRight.setTargetPosition(FRDistance);
-        backLeft.setTargetPosition(BLDistance);
-        frontLeft.setTargetPosition(FLDistance);
+        backRight.setTargetPosition(backRight.getCurrentPosition()   + BRDistance);
+        frontRight.setTargetPosition(frontRight.getCurrentPosition() + FRDistance);
+        backLeft.setTargetPosition(backLeft.getCurrentPosition()     + BLDistance);
+        frontLeft.setTargetPosition(frontLeft.getCurrentPosition()   + FLDistance);
 
         backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -103,12 +108,13 @@ public class ActualMainAuto extends LinearOpMode {
         backLeft.setPower(power);
         frontLeft.setPower(power);
 
-        while ((frontRight.isBusy() || frontLeft.isBusy() || backRight.isBusy() || backLeft.isBusy()) && opModeIsActive()) {
+        while ((frontRight.isBusy() || frontLeft.isBusy() || backRight.isBusy() || backLeft.isBusy()) && opModeIsActive() && timer.time() < 4) {
             //Waits for the motors to finish moving & prints 2 CurrentPositions
             telemetry.addData("frontLeft=", frontLeft.getCurrentPosition());
             telemetry.addData("frontRight=", frontRight.getCurrentPosition());
             telemetry.addData("backLeft=", backLeft.getCurrentPosition());
             telemetry.addData("backRight=", backRight.getCurrentPosition());
+            telemetry.addData("time: ", timer.time());
             telemetry.update();
 
         }
@@ -149,7 +155,7 @@ public class ActualMainAuto extends LinearOpMode {
         sleep(1500);
         for (int i = 0; i < 3; i++) {
             shifter.setPosition(0.57);
-            sleep(500);
+            sleep(400);
             shifter.setPosition(1);
             sleep(800);
         }
@@ -174,104 +180,70 @@ public class ActualMainAuto extends LinearOpMode {
 
         if (opModeIsActive() && !isStopRequested()) {
 
+            //move up to read
             movement(700, 700, 700, 700, 0.3);
 
-
-            sleep(3000);
+            sleep(2000);
             String targetZone = getTargetZone();
-
             tfod.shutdown();
-
             telemetry.addData("Target Zone:", targetZone);
             telemetry.update();
 
+            //move up to shoot, then shoot
+            movement(1500, 1500, 1500, 1500, 0.3);
+            movement(150, 0, 150, 0, 0.2);
 
-            movement(2300, 0, 0, 2300, 0.5);
-
-            movement(700, 700, 700, 700, 0.5);
-
+            grabber.setPosition(0.2);
             wobbler.setPower(0.8);
             sleep(700);
             wobbler.setPower(0);
+            lifter.setPosition(0.95);
 
-            lifter.setPosition(0.86);
+            shoot3(0.48);
 
-            firstLauncher.setPower(0.41);
-            secondLauncher.setPower(0.41);
-            sleep(1500);
-            for (int i = 0; i < 3; i++) {
-                shifter.setPosition(0.57);
-                sleep(500);
-                shifter.setPosition(1);
-                sleep(500);
-            }
-            /*
+            //begin placement of wobble goal
+
             switch (targetZone) {
                 case "A":
 
-                    //movement(-2000, -2000, 1);
-
-                    //movement(13000, 0, 1.0);
-
-                    telemetry.addData("cock", "balls");
-                    telemetry.update();
-
-                    //WHAT THE FUUUUUUUUCK
+                    movement(700, 1000, 700, 1000, 0.3);
 
                     grabber.setPosition(0.9);
-                    sleep(500);
-                    wobbler.setPower(-0.7);
-                    sleep(800);
+                    sleep(100);
+                    wobbler.setPower(-0.8);
+                    sleep(700);
                     wobbler.setPower(0);
-                    telemetry.addData("cock&ball", "torture");
-                    telemetry.update();
-                    sleep(500);
-                    //movement(-3000, -3000, 1.0);
 
-                    telemetry.addData("William", "Perri");
-                    telemetry.update();
                     break;
                 case "B":
 
-                    //movement(14000, 6000, 1.0);
-                    telemetry.addData("cock&ball", "torture");
-                    telemetry.update();
-                    lifter.setPosition(0);
+                    movement(1100, 1100, 1100, 1100, 0.5);
+                    sleep(100);
+                    movement(800, 0, 800, 0, 0.3);
+
                     grabber.setPosition(0.9);
-                    sleep(500);
-                    wobbler.setPower(-0.7);
-                    sleep(800);
+                    sleep(100);
+                    wobbler.setPower(-0.8);
+                    sleep(700);
                     wobbler.setPower(0);
-                    telemetry.addData("William", "Perri");
-                    telemetry.update();
-                    sleep(3000);
+
+                    movement(-700, -700, -700, -700, 0.6);
 
                     break;
                 case "C":
-                    //movement(800, 0, 1);
+                    movement(-150, 0, -150, 0, 0.2);
+                    movement(2800, 2800, 2800, 2800, 0.7);
 
-                    //movement(10000, -10000, 1);
-
-                    //movement(-20000, -20000, 1);
-
-                    telemetry.addData("cock&ball", "torture");
-                    telemetry.update();
-                    lifter.setPosition(0);
                     grabber.setPosition(0.9);
-                    sleep(500);
-                    wobbler.setPower(-0.7);
-                    sleep(800);
+                    sleep(100);
+                    wobbler.setPower(-0.9);
+                    sleep(700);
                     wobbler.setPower(0);
 
-                    telemetry.addData("William", "Perri");
-                    telemetry.update();
-                    //movement(20000, 20000, 1);
-                    telemetry.addData("cock", "balls");
-                    telemetry.update();
-
+                    movement(-1700, -1700, -1700, -1700, 0.7);
                     break;
             }
-            */
+
         }
 
     }
